@@ -195,4 +195,77 @@ function renderChallenge() {
 
 function toggleChallenge() {
   const ch = getChallenge();
-  if (ch) { if (!confirm('End chal
+  if (ch) { if (!confirm('End challenge?')) return; setChallenge(null); }
+  else { const days = parseInt(document.getElementById('ch-days').value); setChallenge({ days, start: new Date().toISOString(), nospend: [] }); toast(`${days}-day challenge started! 💪`); }
+  renderChallenge();
+}
+
+function renderTeam() {
+  const exps = getExp(), mems = getMembers();
+  const allNames = [...new Set([...mems.map(m=>m.name),...exps.map(e=>e.member).filter(Boolean)])];
+  const mt = {}; allNames.forEach(n=>{mt[n]=0;}); exps.forEach(e=>{if(e.member)mt[e.member]=(mt[e.member]||0)+Number(e.amount);});
+  const sorted = Object.entries(mt).sort((a,b)=>b[1]-a[1]), total = sorted.reduce((s,[,v])=>s+v,0), maxV = sorted[0]?.[1]||1;
+  setText('t-total',fmt(total)); setText('t-mems',allNames.length); setText('t-avg',fmt(allNames.length?total/allNames.length:0));
+  const lb = document.getElementById('leaderboard');
+  if (!sorted.length) { lb.innerHTML=`<div class="empty"><div class="ei">👥</div><h3>No members yet</h3><p>Add team members above.</p></div>`; renderBadges(); return; }
+  lb.innerHTML = sorted.map(([name,amt],i)=>{const prof=mems.find(m=>m.name===name),em=prof?.emoji||name[0].toUpperCase(),rc=i===0?'r1':i===1?'r2':i===2?'r3':'rx',ec=exps.filter(e=>e.member===name).length,pct=maxV?Math.round((amt/maxV)*100):0;return `<div class="li"><div class="rbadge ${rc}">${i+1}</div><div class="av">${em}</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:0.9rem">${name}</div><div class="t-xs text3">${ec} txns · ${total?Math.round((amt/total)*100):0}% of team</div><div class="pw mt12" style="margin-top:5px;max-width:160px"><div class="pb" style="width:${pct}%"></div></div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:0.95rem">${fmt(amt)}</div>${i===0&&amt>0?'<div class="badge bd-y" style="margin-top:4px">🏆 Top</div>':''}</div></div>`;}).join('');
+  renderBadges();
+}
+
+function addMember() {
+  const name = document.getElementById('m-name').value.trim(), emoji = document.getElementById('m-emoji').value.trim()||'😊';
+  if (!name) { toast('Enter a name','warn'); return; }
+  const mems = getMembers(); if (mems.find(m=>m.name===name)) { toast('Already exists','warn'); return; }
+  mems.push({name,emoji}); setMembers(mems); toast(`${emoji} ${name} added!`);
+  document.getElementById('m-name').value=''; document.getElementById('m-emoji').value=''; renderTeam();
+}
+
+function renderBadges() {
+  const exps=getExp(),mems=getMembers(),goals=getGoals(),ch=getChallenge(),badges=[];
+  if(exps.length>=1)badges.push({i:'🌱',l:'First Expense',d:'Logged first expense',cls:'bd-g'});
+  if(exps.length>=10)badges.push({i:'📊',l:'Data Driven',d:'10+ expenses tracked',cls:'bd-b'});
+  if(mems.length>=2)badges.push({i:'🤝',l:'Team Player',d:'2+ members added',cls:'bd-p'});
+  if(goals.length>=1)badges.push({i:'🎯',l:'Goal Setter',d:'Created a savings goal',cls:'bd-y'});
+  if(ch)badges.push({i:'🔥',l:'Challenge Active',d:'On a no-spend challenge',cls:'bd-b'});
+  const el=document.getElementById('badges'); if(!el)return;
+  if(!badges.length){el.innerHTML=`<div class="t-sm text3">Add expenses to unlock badges.</div>`;return;}
+  el.innerHTML=badges.map(b=>`<div class="fc" style="padding:8px 0;border-bottom:1px solid var(--border);gap:10px"><span style="font-size:1.1rem">${b.i}</span><div style="flex:1"><div style="font-size:0.84rem;font-weight:600">${b.l}</div><div class="t-xs text3">${b.d}</div></div><span class="badge ${b.cls}">Unlocked</span></div>`).join('');
+}
+
+function renderIns() {
+  const exps = getExp();
+  if (!exps.length) { document.getElementById('insights-list').innerHTML=`<div class="empty"><div class="ei">🧠</div><h3>Not enough data</h3><p>Add some expenses first.</p></div>`; return; }
+  const total=exps.reduce((s,e)=>s+Number(e.amount),0), cats={}, days={};
+  exps.forEach(e=>{cats[e.category]=(cats[e.category]||0)+Number(e.amount);const d=e.date?.slice(0,10)||'';days[d]=(days[d]||0)+Number(e.amount);});
+  const dayCount=Object.keys(days).length||1, daily=total/dayCount;
+  const wd=exps.filter(e=>![0,6].includes(new Date(e.date).getDay())).reduce((s,e)=>s+Number(e.amount),0);
+  setText('i-wd',fmt(wd)); setText('i-we',fmt(total-wd));
+  let score=100;
+  if(daily>3000)score-=25;else if(daily>2000)score-=10;
+  const topPct=Math.max(...Object.values(cats))/total;
+  if(topPct>0.5)score-=20;else if(topPct>0.4)score-=10;
+  if(getGoals().length)score+=10; if(getChallenge())score+=5;
+  score=Math.max(0,Math.min(100,score));
+  const g=score>=80?{l:'Excellent',c:'#10b981',i:'🟢'}:score>=60?{l:'Good',c:'#3b82f6',i:'🔵'}:score>=40?{l:'Fair',c:'#f59e0b',i:'🟡'}:{l:'Needs Work',c:'#ef4444',i:'🔴'};
+  document.getElementById('score-card').innerHTML=`<div class="card" style="background:${g.c}12;border-color:${g.c}33"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div style="text-align:center"><div style="font-family:'DM Mono',monospace;font-size:2.5rem;font-weight:500;color:${g.c};line-height:1">${score}</div><div class="t-xs text3" style="text-transform:uppercase;letter-spacing:1px">Health Score</div></div><div style="flex:1"><div style="font-weight:700;font-size:1.1rem;color:${g.c}">${g.i} ${g.l}</div><div class="t-sm text2 mt12" style="margin-top:5px;line-height:1.5">Based on daily spend, category diversity, goals & challenges.</div><div class="pw mt12" style="margin-top:8px;max-width:240px"><div class="pb" style="width:${score}%;background:${g.c}"></div></div></div></div></div>`;
+  const tb=document.getElementById('trend-bars'), trend=[];
+  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);trend.push({d,v:days[d.toISOString().slice(0,10)]||0});}
+  const maxT=Math.max(...trend.map(x=>x.v),1);
+  tb.innerHTML=trend.map(({d,v})=>{const h=Math.round((v/maxT)*100);return `<div class="bar-col"><div class="bar-val">${v>=1000?Math.round(v/1000)+'k':v||''}</div><div class="bar" style="height:${Math.max(4,h)}%;background:#3b82f655;border:1px solid #3b82f6aa"></div><div class="bar-lbl">${d.getDate()}</div></div>`;}).join('');
+  const ins=[];
+  const topCat=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+  if(topCat){const p=Math.round((topCat[1]/total)*100);ins.push({type:p>40?'warn':'info',i:CATS[topCat[0]]?.i||'📊',t:`${topCat[0]} is your biggest expense`,d:`You've spent ${fmt(topCat[1])} on ${topCat[0]} — ${p}% of total. ${p>40?'Consider reducing.':'Looks balanced!'}`});}
+  ins.push({type:'info',i:'📅',t:`Daily average: ${fmt(daily)}`,d:`Over ${dayCount} days. ${daily>2000?'Try to stay under ₹1,500/day.':'Great discipline!'}`});
+  const highDays=Object.entries(days).filter(([,v])=>v>daily*2);
+  if(highDays.length)ins.push({type:'warn',i:'⚡',t:`${highDays.length} high-spend day${highDays.length>1?'s':''} detected`,d:`Unusually high spending on: ${highDays.map(([d])=>new Date(d).toLocaleDateString('en-IN',{month:'short',day:'numeric'})).join(', ')}.`});
+  const food=cats['Food']||0;
+  if(food>total*0.35)ins.push({type:'bad',i:'🍕',t:'Food spending is high',d:`Food = ${Math.round((food/total)*100)}% of spending. Cooking at home could save ${fmt(food*0.4)}/month.`});
+  if(wd>0&&(total-wd)>wd*0.5)ins.push({type:'warn',i:'🎉',t:'Weekend spending surge',d:`You spend ${fmt(total-wd)} on weekends vs ${fmt(wd)} on weekdays. Plan ahead.`});
+  ins.push({type:'good',i:'💡',t:'Save ₹500/day',d:`Even ₹500 daily savings = ${fmt(500*30)}/month and ${fmt(500*365)}/year.`});
+  document.getElementById('insights-list').innerHTML=ins.map(x=>`<div class="ins ${x.type}"><div class="ins-ico">${x.i}</div><div><div style="font-weight:700;font-size:0.88rem;margin-bottom:3px">${x.t}</div><div class="t-sm text2" style="line-height:1.5">${x.d}</div></div></div>`).join('');
+  const fc=document.getElementById('forecast');
+  if(exps.length>=2){fc.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px"><div><div class="t-xs text3" style="text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Daily Avg</div><div class="mono" style="font-size:1.3rem">${fmt(daily)}</div></div><div><div class="t-xs text3" style="text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Monthly Est.</div><div class="mono" style="font-size:1.3rem;color:var(--accent2)">${fmt(daily*30)}</div></div><div><div class="t-xs text3" style="text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Annual Est.</div><div class="mono" style="font-size:1.3rem;color:var(--accent3)">${fmt(daily*365)}</div></div></div><div class="t-xs text3 mt12">* Based on ${dayCount}-day average across ${exps.length} transactions</div>`;}
+  else{fc.innerHTML=`<div class="t-sm text3">Add more expenses to generate forecast.</div>`;}
+}
+
+renderHome();
