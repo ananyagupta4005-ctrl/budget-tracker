@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BudgetFlow — Budget Smarter, Spend Better</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div style="background:var(--bg);min-height:100vh">
+
+  <nav class="nav">
+    <span class="brand"><span class="brand-icon">💰</span>BudgetFlow</span>
+    <button class="nav-btn active" onclick="showPage('home',this)">🏠 Home</button>
+    <button class="nav-btn" onclick="showPage('add',this)">➕ Add</button>
+    <button class="nav-btn" onclick="showPage('dash',this)">📊 Dashboard</button>
+    <button class="nav-btn" onclick="showPage('map',this)">🗺️ Map</button>
+    <button class="nav-btn" onclick="showPage('goals',this)">🎯 Goals</button>
+    <button class="nav-btn" onclick="showPage('team',this)">👥 Team</button>
+    <button class="nav-btn" onclick="showPage('ins',this)">🧠 Insights</button>
+  </nav>
+
+  <!-- HOME -->
+  <div id="p-home" class="page active">
+    <div class="hero">
+      <h1>Budget Smarter,<br>Spend Better.</h1>
+      <p>Track team expenses, visualize spending patterns, and hit your savings goals.</p>
+      <div class="hero-btns">
+        <button class="btn btn-p" onclick="document.querySelector('[onclick*=add]').click()">➕ Add Expense</button>
+        <button class="btn btn-o" onclick="document.querySelector('[onclick*=dash]').click()">View Dashboard →</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat" style="--sc:var(--accent)"><div class="stat-label">Total Spent</div><div class="stat-val" id="h-total">₹0</div><div class="stat-sub" id="h-count">0 entries</div></div>
+      <div class="stat" style="--sc:var(--green)"><div class="stat-label">Today's Spend</div><div class="stat-val" id="h-today">₹0</div><div class="stat-sub">Today so far</div></div>
+      <div class="stat" style="--sc:var(--accent3)"><div class="stat-label">Top Category</div><div class="stat-val" id="h-top" style="font-size:1rem;padding-top:6px">—</div><div class="stat-sub">Most spending</div></div>
+      <div class="stat" style="--sc:var(--accent2)"><div class="stat-label">Active Goals</div><div class="stat-val" id="h-goals">0</div><div class="stat-sub">Savings targets</div></div>
+    </div>
+    <div class="card"><div class="ctitle">⏱️ Recent Expenses</div><div id="recent-list"></div></div>
+  </div>
+
+  <!-- ADD -->
+  <div id="p-add" class="page">
+    <div style="margin-bottom:20px"><div style="font-size:1.5rem;font-weight:700;letter-spacing:-0.5px">Add Expense</div><div class="text2 t-sm mt12">Record a new transaction with location</div></div>
+    <div class="g2">
+      <div>
+        <div class="card">
+          <div class="ctitle">💳 Expense Details</div>
+          <div class="fg"><label class="fl">Description *</label><input class="fi" id="a-desc" placeholder="e.g. Lunch at Subway" autocomplete="off"></div>
+          <div class="frow">
+            <div class="fg" style="margin-bottom:0"><label class="fl">Amount (₹) *</label><input class="fi" id="a-amt" type="number" placeholder="0" min="0"></div>
+            <div class="fg" style="margin-bottom:0"><label class="fl">Date *</label><input class="fi" id="a-date" type="date"></div>
+          </div>
+          <div class="fg mt16"><label class="fl">Category *</label>
+            <select class="fs" id="a-cat">
+              <option value="" disabled selected>Select category</option>
+              <option value="Food">🍕 Food</option>
+              <option value="Transport">🚗 Transport</option>
+              <option value="Shopping">🛍️ Shopping</option>
+              <option value="Health">💊 Health</option>
+              <option value="Entertainment">🎮 Entertainment</option>
+              <option value="Bills">📋 Bills</option>
+              <option value="Travel">✈️ Travel</option>
+              <option value="Education">📚 Education</option>
+              <option value="Other">📦 Other</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl">Team Member</label><input class="fi" id="a-member" placeholder="Your name (default: You)" autocomplete="off"></div>
+          <div class="fg"><label class="fl">Notes (optional)</label><textarea class="ft" id="a-notes" rows="2" placeholder="Any notes..."></textarea></div>
+        </div>
+        <div class="card mt12">
+          <div class="ctitle">📍 Location</div>
+          <p class="text2 t-sm mb12" style="line-height:1.5">Capture your GPS coordinates for map visualization.</p>
+          <button class="btn btn-o" id="loc-btn" onclick="captureLocation()">📍 Capture Location</button>
+          <div id="loc-status" class="t-xs text3 mt12"></div>
+        </div>
+        <button class="btn btn-p btn-full mt16" onclick="saveExpense()">✅ Save Expense</button>
+      </div>
+      <div>
+        <div class="card">
+          <div class="ctitle">⚡ Quick Stats</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="fb"><span class="text2 t-sm">This Month</span><span class="mono" id="qs-m">₹0</span></div>
+            <div class="sep"></div>
+            <div class="fb"><span class="text2 t-sm">This Week</span><span class="mono" id="qs-w">₹0</span></div>
+            <div class="sep"></div>
+            <div class="fb"><span class="text2 t-sm">Today</span><span class="mono" id="qs-t">₹0</span></div>
+          </div>
+        </div>
+        <div class="card mt12">
+          <div class="ctitle">💡 Tips</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="fc t-sm text2"><span>📍</span><span>Always capture location for map insights.</span></div>
+            <div class="fc t-sm text2"><span>👥</span><span>Tag members to track on leaderboard.</span></div>
+            <div class="fc t-sm text2"><span>🎯</span><span>Set savings goals to stay on track.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="p-dash" class="page">
+    <div class="fb mb16" style="flex-wrap:wrap;gap:10px">
+      <div><div style="font-size:1.5rem;font-weight:700;letter-spacing:-0.5px">Dashboard</div><div class="text2 t-sm mt12">Spending overview</div></div>
+      <button class="btn btn-p btn-sm" onclick="document.querySelector('[onclick*=add]').click()">➕ Add Expense</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat" style="--sc:var(--accent)"><div class="stat-label">Total Spent</div><div class="stat-val" id="d-total">₹0</div><div class="stat-sub" id="d-tx">0 transactions</div></div>
+      <div class="stat" style="--sc:var(--green)"><div class="stat-label">Daily Average</div><div class="stat-val" id="d-avg">₹0</div><div class="stat-sub">Per active day</div></div>
+      <div class="stat" style="--sc:var(--accent3)"><div class="stat-label">Top Category</div><div class="stat-val" id="d-top" style="font-size:1rem;padding-top:6px">—</div><div class="stat-sub">Highest spending</div></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="ctitle">🥧 By Category</div><div id="pie-vis" style="min-height:120px"></div><div class="pie-legend" id="pie-legend"></div></div>
+      <div class="card"><div class="ctitle">📈 Last 7 Days</div><div class="bar-wrap" id="bar-vis"></div></div>
+    </div>
+    <div class="card mt16">
+      <div class="fb mb12">
+        <div class="ctitle" style="margin-bottom:0">🗂️ All Expenses</div>
+        <button class="btn btn-d btn-sm" onclick="if(confirm('Delete all?')){localStorage.removeItem('exp_data');renderAll()}">🗑️ Clear All</button>
+      </div>
+      <div style="overflow-x:auto"><table><thead><tr><th>Description</th><th>Category</th><th>Member</th><th>Amount</th><th></th></tr></thead><tbody id="exp-tbody"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="p-map" class="page">
+    <div style="margin-bottom:20px"><div style="font-size:1.5rem;font-weight:700;letter-spacing:-0.5px">Expense Map</div><div class="text2 t-sm mt12">Geographic spending visualization</div></div>
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
+      <div class="stat" style="--sc:var(--accent)"><div class="stat-label">Pinned</div><div class="stat-val" id="mp-pin">0</div></div>
+      <div class="stat" style="--sc:var(--green)"><div class="stat-label">On Map</div><div class="stat-val" id="mp-tot">₹0</div></div>
+    </div>
+    <div class="map-ph" id="map-container">
+      <div style="font-size:2.5rem;margin-bottom:12px">🗺️</div>
+      <h3>Interactive Map</h3>
+      <p>Expenses with location data will appear as colored pins. Bigger & redder = higher spend.</p>
+      <div id="map-dots" style="margin-bottom:12px"></div>
+      <button class="btn btn-p btn-sm" onclick="document.querySelector('[onclick*=add]').click()">➕ Add with Location</button>
+    </div>
+    <div class="card mt12">
+      <div class="ctitle">🔑 Legend</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <div class="fc t-sm text2"><div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0"></div>Low Spend</div>
+        <div class="fc t-sm text2"><div style="width:10px;height:10px;border-radius:50%;background:var(--yellow);flex-shrink:0"></div>Medium Spend</div>
+        <div class="fc t-sm text2"><div style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0"></div>High Spend</div>
+        <div class="fc t-sm text2"><div style="width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>Your Location</div>
+      </div>
+    </div>
+    <div class="card mt12"><div class="ctitle">📌 Location-Tagged Expenses</div><div id="map-list"></div></div>
+  </div>
+
+  <!-- GOALS -->
+  <div id="p-goals" class="page">
+    <div style="margin-bottom:20px"><div style="font-size:1.5rem;font-weight:700;letter-spacing:-0.5px">Goals & Challenges</div><div class="text2 t-sm mt12">Track savings and take on challenges</div></div>
+    <div class="g2">
+      <div>
+        <div class="card mb16">
+          <div class="ctitle">🎯 Create Savings Goal</div>
+          <div class="fg"><label class="fl">Goal Name *</label><input class="fi" id="g-name" placeholder="e.g. New Laptop"></div>
+          <div class="frow">
+            <div class="fg" style="margin-bottom:0"><label class="fl">Target (₹) *</label><input class="fi" id="g-target" type="number" placeholder="50000" min="1"></div>
+            <div class="fg" style="margin-bottom:0"><label class="fl">Already Saved</label><input class="fi" id="g-saved" type="number" placeholder="0" min="0"></div>
+          </div>
+          <div class="fg mt12"><label class="fl">Deadline</label><input class="fi" id="g-dl" type="date"></div>
+          <button class="btn btn-p btn-full" onclick="addGoal()">🎯 Create Goal</button>
+        </div>
+        <div id="goals-list"></div>
+      </div>
+      <div>
+        <div style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(6,182,212,0.06));border:1px solid rgba(16,185,129,0.25);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:14px">
+          <div style="font-size:2rem;margin-bottom:10px">🏆</div>
+          <div style="font-weight:700;font-size:1rem;margin-bottom:6px">No-Spend Day Challenge</div>
+          <div class="text2 t-sm mb16" style="line-height:1.5">Build financial discipline with daily spending challenges.</div>
+          <div class="fg"><label class="fl">Duration</label>
+            <select class="fs" id="ch-days"><option value="7">7 Days</option><option value="14">14 Days</option><option value="21">21 Days</option><option value="30" selected>30 Days</option></select>
+          </div>
+          <div class="t-xs text3 mb12" id="ch-status">No active challenge</div>
+          <button class="btn btn-g" id="ch-btn" onclick="toggleChallenge()">🚀 Start Challenge</button>
+          <div class="dgrid" id="day-grid"></div>
+          <div class="t-xs text3 mt12">Tap past days to mark as no-spend</div>
+        </div>
+        <div class="card">
+          <div class="ctitle">💡 Savings Tips</div>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div class="fc t-sm"><div style="width:28px;height:28px;background:rgba(59,130,246,0.1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">☕</div><span class="text2">Skip daily coffee → save ₹3,000–5,000/month</span></div>
+            <div class="fc t-sm"><div style="width:28px;height:28px;background:rgba(16,185,129,0.1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">🍱</div><span class="text2">Meal prep → cut food costs by 40%</span></div>
+            <div class="fc t-sm"><div style="width:28px;height:28px;background:rgba(245,158,11,0.1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">📱</div><span class="text2">Review subscriptions → save ₹2,000+/month</span></div>
+            <div class="fc t-sm"><div style="width:28px;height:28px;background:rgba(139,92,246,0.1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px">💳</div><span class="text2">50-30-20 rule: needs/wants/savings</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM -->
+  <div id="p-team" class="page">
+    <div style="margin-bottom:20px"><div style="font-size:1.5rem;font-weight:700;letter-spacing:-0.5px">Team Leaderboard</div><div class="text2 t-sm mt12">Track spending across team members</div></div>
+    <div class="stats-grid">
+      <div class="stat" style="--sc:var(--accent)"><div class="stat-label">Team Total</div><div class="stat-val" id="t-total">₹0</div></div>
+      <div class="stat" style="--sc:var(--green)"><div class="stat-label">Members</div><div class="stat-val" id="t-mems">0</div></div>
+      <div class="stat" style="--sc:var(--accent3)"><div class="stat-label">Avg/Member</div><div class="stat-val" id="t-avg">₹0</div></div>
+    </div>
+    <div class="g2">
+      <div><div class="card"><div class="ctitle">🏆 Leaderboard</div><div id="leaderboard"></div></div></div>
+      <div>
+        <div class="card mb16">
+          <div class="ctitle">➕ Add Member</div>
+          <div class="frow">
+            <div class="fg" style="margin-bottom:0"><label class="fl">Name *</label><input class="fi" id="m-name" placeholder="e.g. Rahul"></div>
+            <div class="fg" style="margin-bottom:0"><label class="fl">Emoji</label><input class="fi" id="m-emoji" placeholder="😊" maxlength="2"></div>
+          </div>
+          <button class="btn btn-p btn-full mt16" onclick="addMember()">➕ Add Member</button>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg,rgba(245,158,11,0.06),rgba(249,115,22,0.04));border-color:rgba(245,158,11,0.2)">
+          <div class="ctitle">🎖️ Badges</div><div id="badges"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div id="p-ins" class="page">
+    <div style="margin-bottom:20px"><div style="font-size:1.5rem;font-weight:700;letter-spacing:-0.5px">Smart Insights</div><div class="text2 t-sm mt12">AI-powered spending analysis</div></div>
+    <div id="score-card" class="mb16"></div>
+    <div class="g2 mb16">
+      <div class="stat" style="--sc:var(--accent)"><div class="stat-label">Weekday Spend</div><div class="stat-val" id="i-wd">₹0</div></div>
+      <div class="stat" style="--sc:var(--accent3)"><div class="stat-label">Weekend Spend</div><div class="stat-val" id="i-we">₹0</div></div>
+    </div>
+    <div class="card mb16"><div class="ctitle">📈 14-Day Trend</div><div class="bar-wrap" id="trend-bars"></div></div>
+    <div>
+      <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;display:flex;align-items:center;gap:7px"><span>🧠</span>Recommendations</div>
+      <div id="insights-list"></div>
+    </div>
+    <div class="card mt16"><div class="ctitle">🔮 Spending Forecast</div><div id="forecast"></div></div>
+  </div>
+
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
